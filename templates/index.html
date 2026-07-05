@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Delhi NCR AQI Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #eef2eb;
+            --panel: rgba(255, 255, 255, 0.82);
+            --panel-strong: #ffffff;
+            --panel-dark: #121a1f;
+            --border: rgba(17, 24, 39, 0.08);
+            --text: #12202b;
+            --muted: #687784;
+            --green: #1e7b61;
+            --amber: #d28b21;
+            --red: #c54c38;
+            --shadow: 0 24px 64px rgba(18, 32, 43, 0.10);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 18px;
+            --radius-sm: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(30, 123, 97, 0.10), transparent 22%),
+                linear-gradient(180deg, #edf2ea 0%, #f6f7f3 48%, #f0f2ee 100%);
+        }
+
+        .dashboard-shell {
+            padding: 24px 0 30px;
+        }
+
+        .top-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 18px 22px;
+            border-radius: 24px;
+            background: rgba(18, 26, 31, 0.92);
+            color: #f8fafc;
+            box-shadow: 0 18px 40px rgba(18, 26, 31, 0.18);
+            margin-bottom: 22px;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            background: linear-gradient(135deg, #23906f, #155240);
+        }
+
+        .eyebrow {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.56);
+        }
+
+        .brand-title {
+            margin: 0;
+            font-size: 1.55rem;
+            line-height: 1.05;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .sidebar-card,
+        .main-card,
+        .chart-card,
+        .kpi-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            background: var(--panel);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar-card {
+            padding: 22px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-stack {
+            display: grid;
+            gap: 16px;
+        }
+
+        .sidebar-title,
+        .section-title,
+        .card-title {
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .sidebar-title {
+            font-size: 1.15rem;
+        }
+
+        .panel-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            font-weight: 700;
+            color: #7b8978;
+            margin-bottom: 6px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-live {
+            background: rgba(30, 123, 97, 0.12);
+            color: var(--green);
+        }
+
+        .status-fallback {
+            background: rgba(210, 139, 33, 0.14);
+            color: #9b670e;
+        }
+
+        .filters-form {
+            display: grid;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .filter-actions {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .form-block label {
+            display: block;
+            font-size: 0.83rem;
+            font-weight: 700;
+            margin-bottom: 7px;
+            color: var(--muted);
+        }
+
+        .form-select,
+        .filters-form .btn {
+            min-height: 48px;
+            border-radius: 16px;
+            border-color: rgba(17, 24, 39, 0.08);
+            font-size: 0.95rem;
+        }
+
+        .filters-form .btn {
+            font-weight: 700;
+            border: none;
+            background: linear-gradient(135deg, #1e7b61, #145240);
+            color: #fff;
+        }
+
+        .reset-link {
+            min-height: 48px;
+            padding: 0 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            border: 1px solid rgba(17, 24, 39, 0.08);
+            background: rgba(255, 255, 255, 0.88);
+            color: var(--text);
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .kpi-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .kpi-card {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            border-radius: var(--radius-md);
+        }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 8px;
+        }
+
+        .kpi-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .kpi-good {
+            background: rgba(30, 123, 97, 0.10);
+            color: var(--green);
+        }
+
+        .kpi-mid {
+            background: rgba(210, 139, 33, 0.12);
+            color: #9b670e;
+        }
+
+        .kpi-bad {
+            background: rgba(197, 76, 56, 0.12);
+            color: var(--red);
+        }
+
+        .aqi-scale {
+            padding-top: 2px;
+        }
+
+        .scale-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 0.88rem;
+        }
+
+        .scale-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .swatch {
+            width: 11px;
+            height: 11px;
+            border-radius: 999px;
+        }
+
+        .scale-row span:last-child {
+            color: var(--muted);
+        }
+
+        .section-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            font-size: 1.18rem;
+        }
+
+        .section-meta {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+        }
+
+        .spatial-grid {
+            align-items: stretch;
+        }
+
+        .main-card {
+            overflow: hidden;
+        }
+
+        .mini-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .mini-stat {
+            padding: 14px;
+            border-radius: 16px;
+            background: #f6f7f4;
+            border: 1px solid rgba(17, 24, 39, 0.05);
+        }
+
+        .mini-stat-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .mini-stat-value {
+            font-size: 1.35rem;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .active-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .active-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #f6f7f4;
+            border: 1px solid rgba(17, 24, 39, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .active-row strong {
+            font-weight: 700;
+        }
+
+        .active-row span {
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .status-band {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            margin-top: 14px;
+        }
+
+        .map-head,
+        .chart-head {
+            padding: 20px 22px 0;
+        }
+
+        .card-title {
+            font-size: 1rem;
+        }
+
+        .map-frame,
+        .chart-frame {
+            padding: 18px;
+        }
+
+        .map-view,
+        .chart-view,
+        .empty-view {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(17, 24, 39, 0.05);
+        }
+
+        .map-view {
+            background: linear-gradient(180deg, #f6f7f4, #edf1ec);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-view {
+            background: linear-gradient(180deg, #f5f7f4, #ebefea);
+        }
+
+        .map-view img,
+        .chart-view img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .map-view img {
+            width: 100%;
+            max-height: 540px;
+            object-fit: contain;
+        }
+
+        .secondary-map {
+            margin-top: 18px;
+        }
+
+        .map-column {
+            display: grid;
+            gap: 18px;
+        }
+
+        .charts-grid {
+            margin-top: 22px;
+        }
+
+        .charts-scroll {
+            max-height: 980px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 6px;
+        }
+
+        .charts-scroll .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .charts-scroll::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .charts-scroll::-webkit-scrollbar-thumb {
+            background: rgba(30, 123, 97, 0.22);
+            border-radius: 999px;
+        }
+
+        .chart-card {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chart-index {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: rgba(30, 123, 97, 0.10);
+            color: var(--green);
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        .chart-head .small-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #7b8978;
+            margin-bottom: 5px;
+        }
+
+        .empty-view {
+            min-height: 260px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(160deg, #172129, #25343d);
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .dashboard-shell {
+                padding-top: 16px;
+            }
+
+            .top-strip {
+                padding-inline: 18px;
+            }
+
+            .map-head,
+            .chart-head {
+                padding: 18px 18px 0;
+            }
+
+            .map-frame,
+            .chart-frame {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+{% set avg = kpi.avg_aqi %}
+{% if avg <= 50 %}
+    {% set avg_label = "Good" %}
+    {% set avg_class = "kpi-good" %}
+{% elif avg <= 100 %}
+    {% set avg_label = "Satisfactory" %}
+    {% set avg_class = "kpi-good" %}
+{% elif avg <= 200 %}
+    {% set avg_label = "Moderate" %}
+    {% set avg_class = "kpi-mid" %}
+{% elif avg <= 300 %}
+    {% set avg_label = "Poor" %}
+    {% set avg_class = "kpi-bad" %}
+{% else %}
+    {% set avg_label = "Severe" %}
+    {% set avg_class = "kpi-bad" %}
+{% endif %}
+
+{% set plot_titles = {
+    "plot1": "AQI Distribution",
+    "plot2": "Seasonal Spread",
+    "plot3": "Hourly Trend",
+    "plot4": "PM2.5 vs AQI",
+    "plot5": "Weekday Distribution",
+    "plot6": "Correlation Heatmap",
+    "plot7": "Temperature vs AQI",
+    "plot8": "Station Comparison",
+    "plot9": "PM2.5 Category View",
+    "plot10": "Wind vs AQI",
+    "plot11": "Visibility vs AQI",
+    "plot12": "Season Comparison",
+    "plot13": "Peak Pollution Hour",
+    "plot14": "Pollutant Levels",
+    "plot15": "Hour x Season Heatmap",
+    "plot16": "Top Polluted Stations"
+} %}
+
+<div class="container-fluid px-3 px-lg-4 dashboard-shell">
+    <div class="top-strip">
+        <div class="brand-wrap">
+            <div>
+                <!-- <div class="eyebrow">Delhi NCR</div> -->
+                <p class="brand-title">Delhi NCR Air Quality Dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-3">
+            <aside class="sidebar-card">
+                <div class="sidebar-stack">
+                    <div>
+                        <div class="panel-label">Controls</div>
+                        <h2 class="sidebar-title">Filters</h2>
+
+                        <form class="filters-form" method="get" action="/">
+                            <div class="form-block">
+                                <label for="year">Year</label>
+                                <select class="form-select" id="year" name="year">
+                                    <option value="all" {% if selected_year == "all" %}selected{% endif %}>All years</option>
+                                    {% for y in years %}
+                                        <option value="{{ y }}" {% if selected_year == (y|string) %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-block">
+                                <label for="station">Station</label>
+                                <select class="form-select" id="station" name="station">
+                                    <option value="all" {% if selected_station == "all" %}selected{% endif %}>All stations</option>
+                                    {% for s in stations %}
+                                        <option value="{{ s }}" {% if selected_station == s %}selected{% endif %}>{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="filter-actions">
+                                <button class="btn" type="submit">Apply</button>
+                                <a class="reset-link" href="/">Reset</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="panel-label">Current View</div>
+                        <h3 class="card-title">Selection</h3>
+                        <div class="active-list mt-3">
+                            <div class="active-row">
+                                <strong>Year</strong>
+                                <span>{{ selected_year if selected_year != "all" else "All Years" }}</span>
+                            </div>
+                            <div class="active-row">
+                                <strong>Station</strong>
+                                <span>{{ selected_station if selected_station != "all" else "All Stations" }}</span>
+                            </div>
+                            <div class="status-band {{ avg_class }}">
+                                <strong>Average AQI</strong>
+                                <span>{{ kpi.avg_aqi | round(1) }} · {{ avg_label }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="panel-label">Network Metrics</div>
+                        <h3 class="card-title">Summary</h3>
+                        <div class="mini-grid mt-3">
+                            <div class="mini-stat">
+                                <div class="mini-stat-label">Max AQI</div>
+                                <div class="mini-stat-value">{{ kpi.max_aqi }}</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-label">Stations</div>
+                                <div class="mini-stat-value">{{ kpi.num_stations }}</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-label">Records</div>
+                                <div class="mini-stat-value">{{ kpi.total_records }}</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-label">Status</div>
+                                <div class="mini-stat-value">{{ avg_label }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="aqi-scale">
+                            <div class="panel-label">AQI Scale</div>
+                            <div class="scale-row">
+                                <div class="scale-left"><span class="swatch" style="background:#1f9d63;"></span>Good</div>
+                                <span>0-50</span>
+                            </div>
+                            <div class="scale-row">
+                                <div class="scale-left"><span class="swatch" style="background:#71b62d;"></span>Satisfactory</div>
+                                <span>51-100</span>
+                            </div>
+                            <div class="scale-row">
+                                <div class="scale-left"><span class="swatch" style="background:#d99d22;"></span>Moderate</div>
+                                <span>101-200</span>
+                            </div>
+                            <div class="scale-row">
+                                <div class="scale-left"><span class="swatch" style="background:#d35f1d;"></span>Poor</div>
+                                <span>201-300</span>
+                            </div>
+                            <div class="scale-row">
+                                <div class="scale-left"><span class="swatch" style="background:#c54c38;"></span>Severe</div>
+                                <span>301+</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="col-12 col-xl-9">
+            <section>
+                <div class="section-bar">
+                    <h2 class="section-title">Spatial View</h2>
+                    <div class="section-meta">Primary Panel</div>
+                </div>
+
+                <div class="row g-4 spatial-grid">
+                    <div class="col-12">
+                        <div class="row g-4">
+                            <div class="col-12 col-lg-6">
+                                <div class="map-column">
+                        {% if district_map %}
+                                    <div class="main-card">
+                                        <div class="map-head">
+                                            <h3 class="card-title">District AQI Map</h3>
+                                        </div>
+                                        <div class="map-frame">
+                                            <div class="map-view">
+                                                <img src="data:image/png;base64,{{ district_map }}" alt="Delhi District AQI Map">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif delhi_map %}
+                                    <div class="main-card">
+                                        <div class="map-head">
+                                            <h3 class="card-title">District AQI Map</h3>
+                                        </div>
+                                        <div class="map-frame">
+                                            <div class="empty-view">District map unavailable</div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="main-card">
+                                        <div class="map-frame">
+                                            <div class="empty-view">No map available</div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <div class="map-column">
+                                {% if delhi_map %}
+                                    <div class="main-card">
+                                        <div class="map-head">
+                                            <div class="d-flex align-items-center justify-content-between gap-3">
+                                                <h3 class="card-title">Live API View</h3>
+                                                <span class="status-pill {% if 'Live API' in live_map_status %}status-live{% else %}status-fallback{% endif %}">
+                                                    {{ live_map_status }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="map-frame">
+                                            <div class="map-view">
+                                                <img src="data:image/png;base64,{{ delhi_map }}" alt="Delhi AQI Live View">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif district_map %}
+                                    <div class="main-card">
+                                        <div class="map-head">
+                                            <div class="d-flex align-items-center justify-content-between gap-3">
+                                                <h3 class="card-title">Live API View</h3>
+                                                <span class="status-pill {% if 'Live API' in live_map_status %}status-live{% else %}status-fallback{% endif %}">
+                                                    {{ live_map_status }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="map-frame">
+                                            <div class="map-view">
+                                                <img src="data:image/png;base64,{{ district_map }}" alt="Delhi AQI Live View">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="main-card">
+                                        <div class="map-frame">
+                                            <div class="empty-view">No live view available</div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts-grid">
+                <div class="section-bar">
+                    <h2 class="section-title">Analytics</h2>
+                    <div class="section-meta">{{ plots|length }} Charts</div>
+                </div>
+
+                <div class="charts-scroll">
+                    <div class="row g-4">
+                        {% for key, img in plots.items() %}
+                        <div class="col-12 col-md-6">
+                            <div class="chart-card">
+                                <div class="chart-head">
+                                    <div class="d-flex align-items-start justify-content-between gap-3">
+                                        <div>
+                                            <div class="small-label">Chart {{ loop.index }}</div>
+                                            <h3 class="card-title">{{ plot_titles.get(key, key|replace("_", " ")|title) }}</h3>
+                                        </div>
+                                        <div class="chart-index">{{ "%02d"|format(loop.index) }}</div>
+                                    </div>
+                                </div>
+                                <div class="chart-frame">
+                                    {% if img %}
+                                    <div class="chart-view">
+                                        <img src="data:image/png;base64,{{ img }}" alt="{{ plot_titles.get(key, key) }}">
+                                    </div>
+                                    {% else %}
+                                    <div class="empty-view">No chart available</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
